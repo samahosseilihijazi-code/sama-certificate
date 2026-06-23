@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام التحقق من الشهادات - سما المعارف</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 80px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 450px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .logo-box {
+            background-color: #172b53;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        .brand-name {
+            color: #1d4ed8;
+            font-weight: 700;
+            font-size: 22px;
+        }
+        .sub-title {
+            background-color: #f0f4ff;
+            color: #172b53;
+            padding: 10px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+        .search-section {
+            border: 2px solid #cbd5e1;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .search-title {
+            font-size: 15px;
+            color: #334155;
+            margin-bottom: 15px;
+            text-align: right;
+            font-weight: 600;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+            text-align: center;
+            font-family: inherit;
+            margin-bottom: 15px;
+        }
+        .btn-search {
+            width: 100%;
+            background-color: #172b53;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-search:hover {
+            background-color: #0f1e3d;
+        }
+        .result-card {
+            display: none;
+            background-color: #e6f4ea;
+            border-right: 8px solid #137333;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: right;
+            margin-top: 20px;
+        }
+        .badge-verified {
+            background-color: #137333;
+            color: white;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .info-label {
+            color: #64748b;
+            font-size: 12px;
+            margin: 5px 0 2px 0;
+        }
+        .info-value {
+            color: #1e293b;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .error-message {
+            display: none;
+            color: #dc2626;
+            background-color: #fef2f2;
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-logo">
+        <div class="logo-box">سما</div>
+        <div class="brand-name">سما المعارف</div>
+    </div>
+
+    <div class="sub-title">نظام التحقق من الشهادات</div>
+
+    <div class="search-section">
+        <div class="search-title">🔍 ابحث عن شهادة</div>
+        <div class="input-group">
+            <input type="text" id="certIdInput" placeholder="أدخل رقم الشهادة (مثال: 1)">
+        </div>
+        <button class="btn-search" onclick="checkCertificate()">تحقق</button>
+    </div>
+
+    <div class="error-message" id="errorMessage">عذراً، لم يتم العثور على هذه الشهادة. يرجى التأكد من الرقم.</div>
+
+    <div class="result-card" id="resultCard">
+        <div class="badge-verified" id="resStatus">✓ معتمدة</div>
+        
+        <div class="info-label">رقم الشهادة</div>
+        <div class="info-value" id="resNum"></div>
+
+        <div class="info-label">اسم الطالب / Student Name</div>
+        <div class="info-value" id="resName" style="font-family: sans-serif;"></div>
+
+        <div class="info-label">اسم الدورة / Course</div>
+        <div class="info-value" id="resCourse" style="font-family: sans-serif;"></div>
+
+        <div class="info-label">تاريخ الإصدار</div>
+        <div class="info-value" id="resDate"></div>
+    </div>
+</div>
+
+<script>
+    function checkCertificate() {
+        const inputVal = document.getElementById('certIdInput').value.trim();
+        const resultCard = document.getElementById('resultCard');
+        const errorMessage = document.getElementById('errorMessage');
+
+        if (!inputVal) {
+            alert("الرجاء إدخال رقم الشهادة أولاً");
+            return;
+        }
+
+        // قراءة ملف الإكسل (data.csv) مباشرة من المجلد
+        fetch('data.csv')
+            .then(response => response.text())
+            .then(text => {
+                const lines = text.split('\n');
+                let foundRow = null;
+
+                // البحث بداخل أسطر الإكسل
+                for (let i = 1; i < lines.length; i++) {
+                    if (!lines[i]) continue;
+                    
+                    const columns = lines[i].split(',');
+                    
+                    // إذا تطابق رقم الشهادة في العمود الأول
+                    if (columns[0].trim() === inputVal) {
+                        foundRow = columns;
+                        break;
+                    }
+                }
+
+                if (foundRow) {
+                    errorMessage.style.display = 'none';
+                    resultCard.style.display = 'block';
+                    
+                    // تعبئة البيانات بحسب ترتيب أعمدة ملف الإكسل
+                    document.getElementById('resNum').innerText = foundRow[0].trim();
+                    document.getElementById('resName').innerText = foundRow[1].trim();
+                    document.getElementById('resCourse').innerText = foundRow[2].trim();
+                    document.getElementById('resDate').innerText = foundRow[3].trim();
+                    document.getElementById('resStatus').innerText = "✓ " + foundRow[4].trim();
+                } else {
+                    resultCard.style.display = 'none';
+                    errorMessage.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                console.error("خطأ:", err);
+                alert("مشكلة في تحميل ملف البيانات data.csv");
+            });
+    }
+</script>
+
+</body>
+</html>
